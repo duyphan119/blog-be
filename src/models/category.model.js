@@ -4,9 +4,11 @@ const categorySchema = new Schema(
   {
     name: {
       type: String,
+      unique: true,
     },
     slug: {
       type: String,
+      unique: true,
     },
     parentId: {
       type: Types.ObjectId,

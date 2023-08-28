@@ -13,6 +13,7 @@ const blogSchema = new Schema(
     },
     thumbnail: {
       type: String,
+      default: "",
     },
     authorId: {
       type: Types.ObjectId,
@@ -26,6 +27,7 @@ const blogSchema = new Schema(
     ],
     view: {
       type: Number,
+      default: 0,
     },
   },
   {

@@ -4,6 +4,9 @@ const {
   signAccessToken,
   hashPassword,
   signRefreshToken,
+  verifyRefreshToken,
+  saveRefreshTokenToCookie,
+  saveAccessTokenToCookie,
 } = require("../utils");
 
 const login = async (parent, args, context) => {
@@ -29,12 +32,9 @@ const login = async (parent, args, context) => {
 
     const refreshToken = signRefreshToken(payload);
 
-    context.res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      maxAge: 365 * 24 * 60 * 60 * 1000,
-      sameSite: "lax",
-      secure: false,
-    });
+    saveAccessTokenToCookie(accessToken, context);
+
+    saveRefreshTokenToCookie(refreshToken, context);
 
     const { hash, ...author } = existingAuthor._doc;
 
@@ -76,12 +76,9 @@ const register = async (parent, args, context) => {
 
     const refreshToken = signRefreshToken(payload);
 
-    context.res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      maxAge: 365 * 24 * 60 * 60 * 1000,
-      sameSite: "lax",
-      secure: false,
-    });
+    saveAccessTokenToCookie(accessToken, context);
+
+    saveRefreshTokenToCookie(refreshToken, context);
 
     return {
       author: savedAuthor,
@@ -94,8 +91,8 @@ const register = async (parent, args, context) => {
 
 const profile = async (parent, args, context) => {
   try {
-    console.log(context.res.locals);
-    const { id } = context;
+    const { id, isExpired } = context;
+    // console.log({ isExpired });
 
     if (!id) throw new Error("Unauthorized");
 
@@ -108,9 +105,13 @@ const profile = async (parent, args, context) => {
 };
 
 const authResolver = {
-  login,
-  register,
-  profile,
+  Mutation: {
+    login,
+    register,
+  },
+  Query: {
+    profile,
+  },
 };
 
 module.exports = authResolver;

@@ -5,6 +5,7 @@ const inputs = `#graphql
     slug: String
     thumbnail: String
     categoryIds: [String]!
+    matchAllCategoryIds: Boolean
   }
   input UpdateBlogInput {
     title: String

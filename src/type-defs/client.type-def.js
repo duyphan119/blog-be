@@ -10,6 +10,14 @@ const types = `#graphql
     countBlogs: [CountBlog]
     recentBlogs: [Blog]
   }
+  type DashboardPage {
+    recentBlogs: [Blog]
+    mostViewBlogs: [Blog]
+    currentMonthCountBlog: Int
+    previousMonthCountBlog: Int
+    previousMonthCountReply: Int
+    currentMonthCountReply: Int
+  }
 `;
 
 const clientTypeDefs = [types];

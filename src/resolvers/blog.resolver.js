@@ -2,13 +2,18 @@ const Blog = require("../models/blog.model");
 const Author = require("../models/author.model");
 const { toSlug } = require("../utils");
 const Category = require("../models/category.model");
-// const { transporter } = require("../config/nodemailer");
 const Subscriber = require("../models/subscriber.model");
-const nodemailer = require("nodemailer");
+const { PubSub } = require("graphql-subscriptions");
+const sendMail = require("../config/nodemailer");
+
+const pubSub = new PubSub();
 
 const createBlog = async (parent, args, context) => {
-  const { createBlogInput } = args;
   const { id: authorId } = context;
+
+  if (!authorId) throw new Error("Unauthorized");
+
+  const { createBlogInput } = args;
   try {
     const createdBlog = new Blog({
       authorId,
@@ -20,20 +25,19 @@ const createBlog = async (parent, args, context) => {
 
     const savedBlog = await createdBlog.save();
 
-    // const subscribers = await Subscriber.find();
+    sendMail(savedBlog);
 
-    // transporter.sendMail({
-    //   from: '"ITS" <duychomap123@gmail.com>',
-    //   to: subscribers.map((subscriber) => subscriber.email).join(", "),
-    //   subject: "New Blog",
-    //   text: `New blog: ${savedBlog.title}`,
-    //   html: `<b>New blog</b>: ${savedBlog.title}`,
-    // });
+    pubSub.publish("blogAdded", { blogAdded: savedBlog });
 
     return savedBlog;
   } catch (error) {
+    console.log(error);
     throw error;
   }
+};
+
+const blogAdded = (...a) => {
+  return pubSub.asyncIterator("blogAdded");
 };
 
 const author = async (parent, args, context) => {
@@ -52,6 +56,10 @@ const author = async (parent, args, context) => {
 
 const deletedBlogs = async (parent, args, context) => {
   try {
+    const { id } = context;
+
+    if (!id) throw new Error("Unauthorized");
+
     const { blogsInput } = args;
 
     const { limit, p, sortBy, sortType, keyword } = blogsInput;
@@ -93,51 +101,36 @@ const deletedBlogs = async (parent, args, context) => {
 };
 const blogs = async (parent, args, context) => {
   try {
-    const subscribers = await Subscriber.find();
-
-    const transporter = nodemailer.createTransport({
-      service: "Gmail",
-      secure: true,
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.PASSWORD,
-      },
-    });
-    await transporter.sendMail({
-      from: '"ITS" <duychomap123@gmail.com>',
-      to: subscribers.map((subscriber) => subscriber.email).join(", "),
-      subject: "New Blog",
-      text: `New blog: Hướng Dẫn Tự Học Lập Trình Cơ Bản Dành Cho Người Mới Bắt Đầu`,
-      html: `<b>New blog</b>: Hướng Dẫn Tự Học Lập Trình Cơ Bản Dành Cho Người Mới Bắt Đầu`,
-    });
-  } catch (error) {
-    console.log(error);
-  }
-  try {
     const { blogsInput } = args;
 
-    const { limit, p, sortBy, sortType, keyword, categoryIds, slug } =
-      blogsInput;
+    const {
+      limit,
+      p,
+      sortBy,
+      sortType,
+      keyword,
+      categoryIds,
+      slug,
+      matchAllCategoryIds,
+    } = blogsInput;
 
-    const categoryWhere = {};
-    if (categoryIds) {
-      if (categoryIds.length > 1) {
-        categoryWhere["$and"] = [];
-        categoryIds.forEach((categoryId) => {
-          categoryWhere["$and"].push({ categoryIds: categoryId });
-        });
-      } else {
-        categoryWhere.categoryIds = categoryIds[0];
-      }
-    }
+    const categoryIdsWhere = (categoryIds || []).map((categoryId) => ({
+      categoryIds: categoryId,
+    }));
+    let orConditions = [
+      ...(keyword && keyword !== ""
+        ? [
+            { title: new RegExp(keyword, "i") },
+            { slug: new RegExp(keyword, "i") },
+          ]
+        : []),
+      ...categoryIdsWhere,
+    ];
+    let andConditions = matchAllCategoryIds ? categoryIdsWhere : [];
 
     const where = {
-      $or: [
-        { title: new RegExp(keyword, "i") },
-        { slug: new RegExp(keyword, "i") },
-        { content: new RegExp(keyword, "i") },
-      ],
-      ...categoryWhere,
+      ...(orConditions.length > 0 ? { $or: orConditions } : {}),
+      ...(andConditions.length > 0 ? { $and: andConditions } : {}),
       ...(slug ? { slug } : {}),
       deletedAt: null,
     };
@@ -169,14 +162,18 @@ const blogs = async (parent, args, context) => {
   }
 };
 
-const updateBlog = async (parent, args, input) => {
+const updateBlog = async (parent, args, context) => {
   try {
     const { updateBlogInput } = args;
+
+    const { id: authorId } = context;
+
+    if (!authorId) throw new Error("Unauthorized");
 
     const { id, title, slug, content, categoryIds, thumbnail } =
       updateBlogInput;
 
-    const existingBlog = await Blog.findById(id);
+    const existingBlog = await Blog.findOne({ _id: id, authorId });
 
     let isUpdated = false;
 
@@ -207,17 +204,23 @@ const updateBlog = async (parent, args, input) => {
 
     return isUpdated;
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
 const deleteBlogs = async (parent, args, context) => {
   try {
+    const { id: authorId } = context;
+
+    if (!authorId) throw new Error("Unauthorized");
+
     const { idList } = args;
 
     const result = await Blog.deleteMany({
       _id: {
         $in: idList,
       },
+      authorId,
     });
 
     return result.deletedCount > 0;
@@ -248,6 +251,10 @@ const categories = async (parent, args, context) => {
 
 const softDeleteBlogs = async (parent, args, context) => {
   try {
+    const { id: authorId } = context;
+
+    if (!authorId) throw new Error("Unauthorized");
+
     const { idList } = args;
 
     const result = await Blog.updateMany(
@@ -255,13 +262,12 @@ const softDeleteBlogs = async (parent, args, context) => {
         _id: {
           $in: idList,
         },
+        authorId,
       },
       {
         deletedAt: new Date(),
       }
     );
-
-    console.log(result, idList);
 
     return result.modifiedCount > 0;
   } catch (error) {
@@ -271,6 +277,10 @@ const softDeleteBlogs = async (parent, args, context) => {
 
 const restoreBlogs = async (parent, args, context) => {
   try {
+    const { id: authorId } = context;
+
+    if (!authorId) throw new Error("Unauthorized");
+
     const { idList } = args;
 
     const result = await Blog.updateMany(
@@ -278,6 +288,7 @@ const restoreBlogs = async (parent, args, context) => {
         _id: {
           $in: idList,
         },
+        authorId,
       },
       {
         deletedAt: null,
@@ -302,16 +313,25 @@ const blog = async (parent, args, context) => {
 };
 
 const blogResolver = {
-  createBlog,
-  blogs,
-  author,
-  deletedBlogs,
-  updateBlog,
-  deleteBlogs,
-  softDeleteBlogs,
-  restoreBlogs,
-  blog,
-  categories,
+  Query: {
+    blogs,
+    blog,
+    deletedBlogs,
+  },
+  Mutation: {
+    updateBlog,
+    deleteBlogs,
+    softDeleteBlogs,
+    restoreBlogs,
+    createBlog,
+  },
+  Blog: {
+    categories,
+    author,
+  },
+  Subscription: {
+    blogAdded: { subscribe: blogAdded },
+  },
 };
 
 module.exports = blogResolver;

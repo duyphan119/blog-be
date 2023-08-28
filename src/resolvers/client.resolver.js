@@ -1,5 +1,7 @@
 const Blog = require("../models/blog.model");
 const Category = require("../models/category.model");
+const Reply = require("../models/reply.model");
+const fetch = require("node-fetch");
 
 const homePage = async (parent, args, context) => {
   try {
@@ -48,8 +50,72 @@ const homePage = async (parent, args, context) => {
   }
 };
 
+const dashboardPage = async (parent, args, context) => {
+  try {
+    const DEFAULT_LIMIT = 8;
+    const DEFAULT_SORT = { createdAt: "desc" };
+    const DEFAULT_WHERE = { deletedAt: null };
+    const [
+      recentBlogs,
+      mostViewBlogs,
+      currentMonthCountBlog,
+      previousMonthCountBlog,
+      currentMonthCountReply,
+      previousMonthCountReply,
+    ] = await Promise.all([
+      Blog.find(DEFAULT_WHERE).limit(DEFAULT_LIMIT).sort(DEFAULT_SORT),
+      Blog.find(DEFAULT_WHERE)
+        .limit(DEFAULT_LIMIT)
+        .sort({ ...DEFAULT_SORT, view: "desc" }),
+      Blog.count({ ...DEFAULT_WHERE }),
+      Blog.count({ ...DEFAULT_WHERE }),
+      Reply.count({ ...DEFAULT_WHERE }),
+      Reply.count({ ...DEFAULT_WHERE }),
+    ]);
+
+    return {
+      recentBlogs,
+      mostViewBlogs,
+      currentMonthCountBlog,
+      previousMonthCountBlog: previousMonthCountBlog - 1,
+      previousMonthCountReply: previousMonthCountReply - 1,
+      currentMonthCountReply,
+    };
+  } catch (error) {
+    throw error;
+  }
+};
+
+const githubFollowers = async (parent, args, context) => {
+  try {
+    const response = await fetch(
+      `https://api.github.com/users/${process.env.GITHUB}/followers`
+    );
+    const result = await response.json();
+    return result.length;
+  } catch (error) {
+    return 0;
+  }
+};
+
+const youtubeSubscribers = async (parent, args, context) => {
+  try {
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${process.env.CHANNEL_YTB}&key=AIzaSyBkkPtA73cb7WROgy_BfsbqPL6-4PdxJkg`
+    );
+    const result = await response.json();
+    return result?.items[0]?.statistics?.subscriberCount || 0;
+  } catch (error) {}
+  return 0;
+};
+
 const clientResolver = {
-  homePage,
+  Query: {
+    homePage,
+    dashboardPage,
+    githubFollowers,
+    youtubeSubscribers,
+  },
 };
 
 module.exports = clientResolver;

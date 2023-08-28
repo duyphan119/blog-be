@@ -4,6 +4,10 @@ const { toSlug } = require("../utils");
 
 const createCategory = async (parent, args, context) => {
   try {
+    const { id: authorId } = context;
+
+    if (!authorId) throw new Error("Unauthorized");
+
     const { createCategoryInput } = args;
 
     const createdCategory = new Category(createCategoryInput);
@@ -81,6 +85,10 @@ const categories = async (parent, args, context) => {
 
 const deletedCategories = async (parent, args, context) => {
   try {
+    const { id: authorId } = context;
+
+    if (!authorId) throw new Error("Unauthorized");
+
     const { categoriesInput } = args;
 
     const { limit, p, sortBy, sortType, keyword, slug } = categoriesInput;
@@ -137,6 +145,10 @@ const rootCategories = async (parent, args, context) => {
 
 const updateCategory = async (parent, args, input) => {
   try {
+    const { id: authorId } = context;
+
+    if (!authorId) throw new Error("Unauthorized");
+
     const { updateCategoryInput } = args;
 
     const { id, name, slug, parentId } = updateCategoryInput;
@@ -172,6 +184,10 @@ const updateCategory = async (parent, args, input) => {
 
 const deleteCategories = async (parent, args, context) => {
   try {
+    const { id: authorId } = context;
+
+    if (!authorId) throw new Error("Unauthorized");
+
     const { idList } = args;
 
     const result = await Category.deleteMany({
@@ -188,6 +204,10 @@ const deleteCategories = async (parent, args, context) => {
 
 const softDeleteCategories = async (parent, args, context) => {
   try {
+    const { id: authorId } = context;
+
+    if (!authorId) throw new Error("Unauthorized");
+
     const { idList } = args;
 
     const result = await Category.updateMany(
@@ -209,6 +229,10 @@ const softDeleteCategories = async (parent, args, context) => {
 
 const restoreCategories = async (parent, args, context) => {
   try {
+    const { id: authorId } = context;
+
+    if (!authorId) throw new Error("Unauthorized");
+
     const { idList } = args;
 
     const result = await Category.updateMany(
@@ -252,17 +276,23 @@ const parent = async (parent, args, context) => {
 };
 
 const categoryResolver = {
-  createCategory,
-  categories,
-  updateCategory,
-  deleteCategories,
-  softDeleteCategories,
-  restoreCategories,
-  rootCategories,
-  category,
-  parent,
-  deletedCategories,
-  children,
+  Query: {
+    categories,
+    rootCategories,
+    category,
+    deletedCategories,
+  },
+  Mutation: {
+    createCategory,
+    updateCategory,
+    deleteCategories,
+    softDeleteCategories,
+    restoreCategories,
+  },
+  Category: {
+    parent,
+    children,
+  },
 };
 
 module.exports = categoryResolver;

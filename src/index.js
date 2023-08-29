@@ -66,10 +66,14 @@ server.start().then(() => {
   );
 
   connectDB.then(() => {
-    httpServer.listen(PORT, () =>
+    const result = httpServer.listen(PORT, () => {
+      const host = result.address().address;
+      const port = result.address().port;
       console.log(
-        "Running a GraphQL API server at http://localhost:4000/graphql"
-      )
-    );
+        "GraphQL API server is running at http://%s:%s/graphql",
+        host,
+        port
+      );
+    });
   });
 });

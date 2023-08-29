@@ -70,9 +70,9 @@ const blog = async (parent, args, context) => {
 };
 
 const replyResolver = {
-  createReply,
-  replies,
-  blog,
+  Mutation: { createReply },
+  Query: { replies },
+  Reply: { blog },
 };
 
 module.exports = replyResolver;

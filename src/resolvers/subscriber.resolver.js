@@ -14,6 +14,6 @@ const createSubscriber = async (parent, args, context) => {
   }
 };
 
-const subscriberResolver = { createSubscriber };
+const subscriberResolver = { Query: {}, Mutation: { createSubscriber } };
 
 module.exports = subscriberResolver;

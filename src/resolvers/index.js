@@ -3,6 +3,7 @@ const authResolver = require("./auth.resolver");
 const blogResolver = require("./blog.resolver");
 const categoryResolver = require("./category.resolver");
 const clientResolver = require("./client.resolver");
+const contactResolver = require("./contact.resolver");
 const replyResolver = require("./reply.resolver");
 const subscriberResolver = require("./subscriber.resolver");
 
@@ -21,19 +22,20 @@ const resolvers = {
     ...clientResolver.Query,
     ...categoryResolver.Query,
     ...blogResolver.Query,
-    replies: replyResolver.replies,
+    ...contactResolver.Query,
+    ...replyResolver.Query,
+    ...subscriberResolver.Query,
   },
   Category: categoryResolver.Category,
   Blog: blogResolver.Blog,
-  Reply: {
-    blog: replyResolver.blog,
-  },
+  Reply: replyResolver.Reply,
   Mutation: {
     ...authResolver.Mutation,
     ...categoryResolver.Mutation,
     ...blogResolver.Mutation,
-    createReply: replyResolver.createReply,
-    createSubscriber: subscriberResolver.createSubscriber,
+    ...contactResolver.Mutation,
+    ...replyResolver.Mutation,
+    ...subscriberResolver.Mutation,
   },
   Subscription: {
     ...blogResolver.Subscription,

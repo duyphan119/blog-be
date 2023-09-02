@@ -4,6 +4,7 @@ const blogTypeDefs = require("./blog.type-def");
 const categoryTypeDefs = require("./category.type-def");
 const clientTypeDefs = require("./client.type-def");
 const contactTypeDefs = require("./contact.type-def");
+const notificationTypeDefs = require("./notification.type-def");
 const replyTypeDefs = require("./reply.type-def");
 const subscriberTypeDefs = require("./subscriber.type-def");
 
@@ -33,6 +34,8 @@ const query = `#graphql
 
     githubFollowers: Int
     youtubeSubscribers: Int
+
+    notifications(notificationsInput: NotificationsInput): Notifications
   }
 `;
 
@@ -56,6 +59,7 @@ const mutation = `#graphql
     createReply(createReplyInput: CreateReplyInput): Reply
 
     createContact(createContactInput: CreateContactInput): Contact
+    deleteContacts(idList: [String]): Boolean
 
     createSubscriber(createSubscriberInput: CreateSubscriberInput): Subscriber
   }
@@ -64,6 +68,7 @@ const mutation = `#graphql
 const subscription = `#graphql
   type Subscription {
     blogAdded: Blog
+    notificationAdded: Notification
   }
 `;
 
@@ -76,6 +81,7 @@ const typeDefs = [
   replyTypeDefs,
   subscriberTypeDefs,
   contactTypeDefs,
+  notificationTypeDefs,
   [scalars, query, mutation, subscription],
 ].flat();
 

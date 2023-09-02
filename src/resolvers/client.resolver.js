@@ -2,6 +2,7 @@ const Blog = require("../models/blog.model");
 const Category = require("../models/category.model");
 const Reply = require("../models/reply.model");
 const fetch = require("node-fetch");
+const { handleDate } = require("../utils");
 
 const homePage = async (parent, args, context) => {
   try {
@@ -52,9 +53,13 @@ const homePage = async (parent, args, context) => {
 
 const dashboardPage = async (parent, args, context) => {
   try {
-    const DEFAULT_LIMIT = 8;
+    const DEFAULT_LIMIT = 5;
     const DEFAULT_SORT = { createdAt: "desc" };
     const DEFAULT_WHERE = { deletedAt: null };
+
+    const { monthStr, lastMonthStr, lastDate, lastDateLastMonth, year } =
+      handleDate();
+
     const [
       recentBlogs,
       mostViewBlogs,
@@ -67,18 +72,46 @@ const dashboardPage = async (parent, args, context) => {
       Blog.find(DEFAULT_WHERE)
         .limit(DEFAULT_LIMIT)
         .sort({ ...DEFAULT_SORT, view: "desc" }),
-      Blog.count({ ...DEFAULT_WHERE }),
-      Blog.count({ ...DEFAULT_WHERE }),
-      Reply.count({ ...DEFAULT_WHERE }),
-      Reply.count({ ...DEFAULT_WHERE }),
+      Blog.count({
+        ...DEFAULT_WHERE,
+        createdAt: {
+          $gte: new Date(`${year}-${monthStr}-01T00:00:00.000Z`),
+          $lte: new Date(`${year}-${monthStr}-${lastDate}T23:59:59.999Z`),
+        },
+      }),
+      Blog.count({
+        ...DEFAULT_WHERE,
+        createdAt: {
+          $gte: new Date(`${year}-${lastMonthStr}-01T00:00:00.000Z`),
+          $lte: new Date(
+            `${year}-${lastMonthStr}-${lastDateLastMonth}T23:59:59.999Z`
+          ),
+        },
+      }),
+      Reply.count({
+        ...DEFAULT_WHERE,
+        createdAt: {
+          $gte: new Date(`${year}-${monthStr}-01T00:00:00.000Z`),
+          $lte: new Date(`${year}-${monthStr}-${lastDate}T23:59:59.999Z`),
+        },
+      }),
+      Reply.count({
+        ...DEFAULT_WHERE,
+        createdAt: {
+          $gte: new Date(`${year}-${lastMonthStr}-01T00:00:00.000Z`),
+          $lte: new Date(
+            `${year}-${lastMonthStr}-${lastDateLastMonth}T23:59:59.999Z`
+          ),
+        },
+      }),
     ]);
 
     return {
       recentBlogs,
       mostViewBlogs,
       currentMonthCountBlog,
-      previousMonthCountBlog: previousMonthCountBlog - 1,
-      previousMonthCountReply: previousMonthCountReply - 1,
+      previousMonthCountBlog,
+      previousMonthCountReply,
       currentMonthCountReply,
     };
   } catch (error) {

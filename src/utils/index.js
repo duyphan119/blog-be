@@ -52,6 +52,32 @@ const saveRefreshTokenToCookie = (refreshToken, context) => {
   });
 };
 
+const handleDate = (inputDate) => {
+  let dateObj = new Date();
+
+  const month = dateObj.getMonth() + 1;
+  const year = dateObj.getFullYear();
+  const date = dateObj.getDate();
+  const lastDate = new Date(year, month, 0).getDate();
+  const lastMonth = month === 1 ? 12 : month - 1;
+  const lastYear = year - 1;
+  const lastDateLastMonth = new Date(year, lastMonth, 0).getDate();
+  const monthStr = `${month < 10 ? "0" : ""}${month}`;
+  const lastMonthStr = `${lastMonth < 10 ? "0" : ""}${lastMonth}`;
+
+  return {
+    month,
+    year,
+    date,
+    lastDate,
+    lastMonth,
+    lastYear,
+    lastDateLastMonth,
+    monthStr,
+    lastMonthStr,
+  };
+};
+
 module.exports = {
   signAccessToken,
   signRefreshToken,
@@ -63,4 +89,5 @@ module.exports = {
   verifyHashedPassword,
   saveRefreshTokenToCookie,
   saveAccessTokenToCookie,
+  handleDate,
 };

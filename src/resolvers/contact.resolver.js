@@ -1,15 +1,34 @@
 const Contact = require("../models/contact.model");
+const Notification = require("../models/notification.model");
+const { PubSub } = require("graphql-subscriptions");
+
+const pubSub = new PubSub();
 
 const createContact = async (parent, args, context) => {
   try {
     const { createContactInput } = args;
     const createdContact = new Contact(createContactInput);
     const savedContact = await createdContact.save();
+
+    const createdNotification = new Notification({
+      title: "Bạn có một liên hệ mới",
+      refId: savedContact._id,
+      type: "contact",
+    });
+
+    createdNotification.save().then((savedNotification) => {
+      pubSub.publish("notificationAdded", {
+        notificationAdded: savedNotification,
+      });
+    });
+
     return savedContact;
   } catch (error) {
     throw error;
   }
 };
+
+const notificationAdded = () => pubSub.asyncIterator(["notificationAdded"]);
 
 const contacts = async (parent, args, context) => {
   try {
@@ -55,6 +74,32 @@ const contacts = async (parent, args, context) => {
   }
 };
 
-const contactResolver = { Query: { contacts }, Mutation: { createContact } };
+const deleteContacts = async (parent, args, context) => {
+  try {
+    const { id: authorId } = context;
+
+    if (!authorId) throw new Error("Unauthorized");
+
+    const { idList } = args;
+
+    const result = await Contact.deleteMany({
+      _id: {
+        $in: idList,
+      },
+    });
+
+    return result.deletedCount > 0;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const contactResolver = {
+  Query: { contacts },
+  Mutation: { createContact, deleteContacts },
+  Subscription: {
+    notificationAdded: { subscribe: notificationAdded },
+  },
+};
 
 module.exports = contactResolver;

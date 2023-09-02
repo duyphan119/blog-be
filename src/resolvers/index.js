@@ -4,6 +4,7 @@ const blogResolver = require("./blog.resolver");
 const categoryResolver = require("./category.resolver");
 const clientResolver = require("./client.resolver");
 const contactResolver = require("./contact.resolver");
+const notificationResolver = require("./notification.resolver");
 const replyResolver = require("./reply.resolver");
 const subscriberResolver = require("./subscriber.resolver");
 
@@ -25,6 +26,7 @@ const resolvers = {
     ...contactResolver.Query,
     ...replyResolver.Query,
     ...subscriberResolver.Query,
+    ...notificationResolver.Query,
   },
   Category: categoryResolver.Category,
   Blog: blogResolver.Blog,
@@ -36,9 +38,11 @@ const resolvers = {
     ...contactResolver.Mutation,
     ...replyResolver.Mutation,
     ...subscriberResolver.Mutation,
+    ...notificationResolver.Mutation,
   },
   Subscription: {
     ...blogResolver.Subscription,
+    ...contactResolver.Subscription,
   },
 };
 

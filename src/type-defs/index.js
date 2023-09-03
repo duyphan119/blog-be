@@ -43,6 +43,7 @@ const mutation = `#graphql
   type Mutation {
     login(loginInput: LoginInput): Auth
     register(registerInput: RegisterInput): Auth
+    logout: Boolean
 
     createCategory(createCategoryInput: CreateCategoryInput): Category
     updateCategory(updateCategoryInput: UpdateCategoryInput): Boolean
@@ -62,6 +63,8 @@ const mutation = `#graphql
     deleteContacts(idList: [String]): Boolean
 
     createSubscriber(createSubscriberInput: CreateSubscriberInput): Subscriber
+
+    readNotifications(idList: [String]): Boolean
   }
 `;
 

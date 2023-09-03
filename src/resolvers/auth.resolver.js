@@ -104,10 +104,18 @@ const profile = async (parent, args, context) => {
   }
 };
 
+const logout = (parent, args, context) => {
+  const { res } = context;
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+  return true;
+};
+
 const authResolver = {
   Mutation: {
     login,
     register,
+    logout,
   },
   Query: {
     profile,

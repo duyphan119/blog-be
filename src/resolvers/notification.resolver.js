@@ -41,9 +41,27 @@ const notifications = async (parent, args, context) => {
   }
 };
 
+const readNotifications = async (parent, args, context) => {
+  const { idList } = args;
+
+  try {
+    const result = await Notification.updateMany(
+      {
+        _id: {
+          $in: idList,
+        },
+      },
+      { seen: true }
+    );
+    return result.modifiedCount > 0;
+  } catch (error) {
+    throw error;
+  }
+};
+
 const notificationResolver = {
   Query: { notifications },
-  Mutation: {},
+  Mutation: { readNotifications },
 };
 
 module.exports = notificationResolver;

@@ -56,9 +56,9 @@ const author = async (parent, args, context) => {
 
 const deletedBlogs = async (parent, args, context) => {
   try {
-    const { id } = context;
+    const { id: authorId } = context;
 
-    if (!id) throw new Error("Unauthorized");
+    if (!authorId) throw new Error("Unauthorized");
 
     const { blogsInput } = args;
 
@@ -72,6 +72,7 @@ const deletedBlogs = async (parent, args, context) => {
       deletedAt: {
         $ne: null,
       },
+      authorId,
     };
 
     let query = Blog.find(where).sort({
@@ -101,6 +102,8 @@ const deletedBlogs = async (parent, args, context) => {
 };
 const blogs = async (parent, args, context) => {
   try {
+    const { id: authorId } = context;
+
     const { blogsInput } = args;
 
     const {
@@ -132,6 +135,7 @@ const blogs = async (parent, args, context) => {
       ...(orConditions.length > 0 ? { $or: orConditions } : {}),
       ...(andConditions.length > 0 ? { $and: andConditions } : {}),
       ...(slug ? { slug } : {}),
+      ...(authorId ? { authorId } : {}),
       deletedAt: null,
     };
 

@@ -72,6 +72,7 @@ const subscription = `#graphql
   type Subscription {
     blogAdded: Blog
     notificationAdded: Notification
+    replyAdded: Reply
   }
 `;
 

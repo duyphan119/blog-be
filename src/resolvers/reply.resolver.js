@@ -1,5 +1,8 @@
 const Blog = require("../models/blog.model");
 const Reply = require("../models/reply.model");
+const { PubSub } = require("graphql-subscriptions");
+
+const pubSub = new PubSub();
 
 const createReply = async (parent, args, context) => {
   try {
@@ -8,6 +11,8 @@ const createReply = async (parent, args, context) => {
     const createdReply = new Reply(createReplyInput);
 
     const savedReply = await createdReply.save();
+
+    pubSub.publish("replyAdded", { replyAdded: savedReply });
 
     return savedReply;
   } catch (error) {
@@ -69,10 +74,13 @@ const blog = async (parent, args, context) => {
   }
 };
 
+const replyAdded = () => pubSub.asyncIterator(["replyAdded"]);
+
 const replyResolver = {
   Mutation: { createReply },
   Query: { replies },
   Reply: { blog },
+  Subscription: { replyAdded: { subscribe: replyAdded } },
 };
 
 module.exports = replyResolver;

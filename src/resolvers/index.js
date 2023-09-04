@@ -43,6 +43,7 @@ const resolvers = {
   Subscription: {
     ...blogResolver.Subscription,
     ...contactResolver.Subscription,
+    ...replyResolver.Subscription,
   },
 };
 
